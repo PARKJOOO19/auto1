@@ -5,6 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.firefox.service import Service
 import logging
 import HtmlTestRunner
 
@@ -19,7 +20,10 @@ class BookIPSTest(unittest.TestCase):
             option.add_argument("--lang=ko_KR")  # 언어 설정
             option.add_argument("--width=1920")  # 브라우저 창 너비
             option.add_argument("--height=1080")  # 브라우저 창 높이
-            self._driver = webdriver.Firefox(options=option, executable_path='/path/to/geckodriver')  # Geckodriver 경로 명시
+            
+            # Service 객체를 사용하여 Geckodriver 경로 설정
+            service = Service(executable_path='/opt/homebrew/bin/geckodriver')  # Geckodriver의 실제 경로로 변경
+            self._driver = webdriver.Firefox(service=service, options=option)
         except SessionNotCreatedException as s:
             logging.error(f"SessionNotCreatedException: {str(s)}")
             raise
@@ -35,7 +39,7 @@ class BookIPSTest(unittest.TestCase):
         try:
             logging.info("로그인 버튼을 찾습니다.")
             login_btn = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/main/div/div/div/div/div[1]/button'))
+                EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div[1]/header/div/div[1]/div/button[1]'))
             )
             login_btn.click()
             logging.info("로그인 버튼 클릭 성공")
@@ -52,7 +56,7 @@ class BookIPSTest(unittest.TestCase):
         try:
             logging.info("회원가입 버튼을 찾습니다.")
             sign_up_btn = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/div/div[1]/div/div/a[2]'))
+                EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div[1]/header/div/div[1]/div/button[2]'))
             )
             sign_up_btn.click()
             logging.info("회원가입 버튼 클릭 성공")
@@ -68,7 +72,7 @@ class BookIPSTest(unittest.TestCase):
         try:
             logging.info("교재선택 버튼을 찾습니다.")
             choose_btn = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/div/main/div[1]/div/div/section[2]/div[1]/div[1]/button'))
+                EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div[1]/main/div/div/div/section[2]/div[1]/div[1]/button'))
             )
             choose_btn.click()
             logging.info("교재선택 버튼 클릭 성공")
@@ -84,7 +88,7 @@ class BookIPSTest(unittest.TestCase):
         try:
             logging.info("이용권 버튼을 찾습니다.")
             coupon_btn = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/div/main/div[1]/div/div/section[1]/div/a/p'))
+                EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div[1]/main/div/div/div/section[1]/div/div[2]/a/p'))
             )
             coupon_btn.click()
             logging.info("이용권 버튼 클릭 성공")
