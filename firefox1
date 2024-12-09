@@ -1,0 +1,103 @@
+from time import sleep
+import unittest
+from selenium.common.exceptions import NoSuchElementException, SessionNotCreatedException, TimeoutException
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import logging
+import HtmlTestRunner
+
+# Logger 설정
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
+
+class BookIPSTest(unittest.TestCase):
+    def setUp(self):
+        """사전 설정"""
+        try:
+            option = webdriver.FirefoxOptions()
+            option.add_argument("--lang=ko_KR")  # 언어 설정
+            option.add_argument("--width=1920")  # 브라우저 창 너비
+            option.add_argument("--height=1080")  # 브라우저 창 높이
+            self._driver = webdriver.Firefox(options=option, executable_path='/path/to/geckodriver')  # Geckodriver 경로 명시
+        except SessionNotCreatedException as s:
+            logging.error(f"SessionNotCreatedException: {str(s)}")
+            raise
+        except Exception as e:
+            logging.error(f"Error during WebDriver setup: {str(e)}")
+            raise
+
+    def test_enter_page(self):
+        """로그인 테스트 케이스"""
+        driver = self._driver
+        driver.get("https://staging.solvook.com/")
+        driver.implicitly_wait(5)
+        try:
+            logging.info("로그인 버튼을 찾습니다.")
+            login_btn = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/main/div/div/div/div/div[1]/button'))
+            )
+            login_btn.click()
+            logging.info("로그인 버튼 클릭 성공")
+            self.assertTrue(True)
+        except (NoSuchElementException, TimeoutException) as e:
+            logging.error("로그인 버튼 클릭 실패")
+            self.fail(f"로그인 테스트 실패: {str(e)}")
+
+    def test_login_page(self):
+        """회원가입 테스트 케이스"""
+        driver = self._driver
+        driver.get("https://staging.solvook.com/")
+        driver.implicitly_wait(5)
+        try:
+            logging.info("회원가입 버튼을 찾습니다.")
+            sign_up_btn = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/div/div[1]/div/div/a[2]'))
+            )
+            sign_up_btn.click()
+            logging.info("회원가입 버튼 클릭 성공")
+        except (NoSuchElementException, TimeoutException) as e:
+            logging.error("회원가입 버튼 클릭 실패")
+            self.fail(f"회원가입 테스트 실패: {str(e)}")
+
+    def test_main_page(self):
+        """교재선택 테스트 케이스"""
+        driver = self._driver
+        driver.get("https://staging.solvook.com/")
+        driver.implicitly_wait(5)
+        try:
+            logging.info("교재선택 버튼을 찾습니다.")
+            choose_btn = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/div/main/div[1]/div/div/section[2]/div[1]/div[1]/button'))
+            )
+            choose_btn.click()
+            logging.info("교재선택 버튼 클릭 성공")
+        except (NoSuchElementException, TimeoutException) as e:
+            logging.error("교재선택 버튼 클릭 실패")
+            self.fail(f"교재선택 테스트 실패: {str(e)}")
+
+    def test_coupone_page(self):
+        """이용권 테스트 케이스"""
+        driver = self._driver
+        driver.get("https://staging.solvook.com/")
+        driver.implicitly_wait(5)
+        try:
+            logging.info("이용권 버튼을 찾습니다.")
+            coupon_btn = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/div/main/div[1]/div/div/section[1]/div/a/p'))
+            )
+            coupon_btn.click()
+            logging.info("이용권 버튼 클릭 성공")
+        except (NoSuchElementException, TimeoutException) as e:
+            logging.error("이용권 버튼 클릭 실패")
+            self.fail(f"이용권 테스트 실패: {str(e)}")
+
+    def tearDown(self):
+        """테스트 종료 후 드라이버 종료"""
+        self._driver.quit()
+
+if __name__ == '__main__':
+    test_suite = unittest.TestSuite()
+    test_suite.addTests(unittest.TestLoader().loadTestsFromTestCase(BookIPSTest))
+    runner = HtmlTestRunner.HTMLTestRunner(output='bookIPS_Result', verbosity=2, combine_reports=True, report_name="TestReport")
+    runner.run(test_suite)
