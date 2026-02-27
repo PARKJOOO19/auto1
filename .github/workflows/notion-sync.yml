@@ -13,17 +13,20 @@ jobs:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         run: |
-          # PR 제목에서 이슈 번호(예: QA-1) 추출
+          # 1. PR 제목에서 이슈 번호(예: QA-1) 추출
           PR_TITLE="${{ github.event.pull_request.title }}"
           ISSUE_ID=$(echo "$PR_TITLE" | grep -oE 'QA-[0-9]+' | head -n 1)
 
           if [ -z "$ISSUE_ID" ]; then
-            echo "제목에 이슈 번호가 없습니다."
+            echo "❌ 오류: PR 제목에 이슈 번호(QA-번호)가 없습니다."
             exit 0
           fi
 
-          # 노션에서 해당 ID를 가진 페이지 찾기
-          PAGE_ID=$(curl -s -X POST "https://api.notion.com/v1/databases/$DATABASE_ID/query" \
+          echo "🔍 찾는 중: $ISSUE_ID"
+
+          # 2. 노션 데이터베이스에서 해당 ID를 가진 페이지 찾기
+          # 쿼리 필터: 'ID'라는 이름의 속성이 '$ISSUE_ID'와 일치하는지 확인
+          QUERY_RESULT=$(curl -s -X POST "https://api.notion.com/v1/databases/$DATABASE_ID/query" \
             -H "Authorization: Bearer $NOTION_TOKEN" \
             -H "Notion-Version: 2022-06-28" \
             -H "Content-Type: application/json" \
@@ -32,18 +35,38 @@ jobs:
                 \"property\": \"ID\",
                 \"title\": { \"equals\": \"$ISSUE_ID\" }
               }
-            }" | jq -r '.results[0].id')
+            }")
 
-          # 상태를 '완료'로 업데이트
-          if [ "$PAGE_ID" != "null" ]; then
-            curl -s -X PATCH "https://api.notion.com/v1/pages/$PAGE_ID" \
-              -H "Authorization: Bearer $NOTION_TOKEN" \
-              -H "Content-Type: application/json" \
-              -H "Notion-Version: 2022-06-28" \
-              --data '{
-                "properties": {
-                  "상태": { "status": { "name": "완료" } }
+          PAGE_ID=$(echo "$QUERY_RESULT" | jq -r '.results[0].id')
+
+          if [ "$PAGE_ID" == "null" ] || [ -z "$PAGE_ID" ]; then
+            echo "❌ 오류: 노션에서 $ISSUE_ID 항목을 찾을 수 없습니다."
+            exit 1
+          fi
+
+          echo "✅ 페이지 발견: $PAGE_ID. 상태 업데이트를 시작합니다."
+
+          # 3. 노션 페이지 상태를 '완료'로 업데이트
+          # 사용자님의 노션 속성 이름인 '상태'를 사용하며, 카테고리 형식을 맞춥니다.
+          RESPONSE=$(curl -s -X PATCH "https://api.notion.com/v1/pages/$PAGE_ID" \
+            -H "Authorization: Bearer $NOTION_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "Notion-Version: 2022-06-28" \
+            --data "{
+              \"properties\": {
+                \"상태\": {
+                  \"status\": {
+                    \"name\": \"완료\"
+                  }
                 }
-              }'
-            echo "성공: $ISSUE_ID 상태를 완료로 변경했습니다."
+              }
+            }")
+
+          # 결과 확인
+          if echo "$RESPONSE" | grep -q "\"id\":"; then
+            echo "🎉 성공: $ISSUE_ID 상태를 '완료'로 변경했습니다."
+          else
+            echo "❌ 오류: 노션 업데이트에 실패했습니다. 응답 메시지:"
+            echo "$RESPONSE"
+            exit 1
           fi
