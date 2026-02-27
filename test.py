@@ -1,3 +1,3 @@
 p = 40 
-print("sunbae.lee " + str(p) + " 살 이쥬?" )
+print("Logan " + str(p) + "바껴라 상태값" )
 
